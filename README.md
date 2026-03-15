@@ -29,4 +29,4 @@ npm run dev
 ```
 
 ## Live demo
-[your-vercel-url]
+https://cba-parser.vercel.app/
