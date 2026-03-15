@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Automated union contract extraction for construction payroll teams",
   icons: {
     icon: [
-      { url: '/favicon.ico' },
+      
       { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
   },
