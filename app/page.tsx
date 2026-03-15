@@ -1,113 +1,118 @@
-import Image from "next/image";
+'use client';
+import { useState, useEffect } from 'react';
+import { ParsedAgreement } from '@/lib/types';
+import { SEED_AGREEMENTS } from '@/lib/seed';
+import UploadZone from '@/components/UploadZone';
+import RateTable from '@/components/RateTable';
+import FlagsPanel from '@/components/FlagsPanel';
+import LibraryPanel from '@/components/LibraryPanel';
+import ExportButton from '@/components/ExportButton';
 
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+  const [library, setLibrary] = useState<ParsedAgreement[]>([]);
+  const [active, setActive] = useState<ParsedAgreement | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+  useEffect(() => {
+    const stored = localStorage.getItem('cba-library');
+    const parsed = stored ? JSON.parse(stored) : [];
+    const all = [...SEED_AGREEMENTS, ...parsed] as ParsedAgreement[];
+    setLibrary(all);
+    setActive(all[0]);
+  }, []);
+
+  const handleParse = async (file?: File, text?: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      if (file) formData.append('file', file);
+      if (text) formData.append('text', text);
+
+      const res = await fetch('/api/parse', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error('Parse failed');
+
+      const agreement = await res.json() as ParsedAgreement;
+
+      const stored = localStorage.getItem('cba-library');
+      const existing = stored ? JSON.parse(stored) : [];
+      const updated = [agreement, ...existing];
+      localStorage.setItem('cba-library', JSON.stringify(updated));
+
+      setLibrary([...SEED_AGREEMENTS as ParsedAgreement[], ...updated]);
+      setActive(agreement);
+    } catch (e) {
+      setError('Failed to parse agreement. Check the input and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Left sidebar — library */}
+      <div className="w-72 bg-white border-r border-gray-200 flex flex-col">
+        <div className="p-5 border-b border-gray-200">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-2 h-2 bg-blue-600 rounded-full" />
+            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">CBA Parser</span>
+          </div>
+          <p className="text-xs text-gray-500">Union rate extraction for payroll teams</p>
+        </div>
+        <LibraryPanel
+          library={library}
+          activeId={active?.id}
+          onSelect={setActive}
         />
       </div>
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between">
+          <div>
+            {active && (
+              <>
+                <h1 className="text-lg font-semibold text-gray-900">{active.unionName}</h1>
+                <p className="text-sm text-gray-500">
+                  {active.trade} · {active.state}{active.county ? `, ${active.county}` : ''} · {active.agreementPeriod}
+                </p>
+              </>
+            )}
+          </div>
+          {active && <ExportButton agreement={active} />}
+        </div>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+        {/* Content area */}
+        <div className="flex-1 overflow-auto p-8">
+          {/* Upload zone — always visible at top */}
+          <UploadZone onParse={handleParse} loading={loading} />
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+          {active && (
+            <div className="mt-8 space-y-6">
+              {/* Summary */}
+              {active.summary && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-900 leading-relaxed">{active.summary}</p>
+                </div>
+              )}
+
+              {/* Flags */}
+              {active.flags?.length > 0 && <FlagsPanel flags={active.flags} />}
+
+              {/* Rate table */}
+              <RateTable classifications={active.classifications} />
+            </div>
+          )}
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
