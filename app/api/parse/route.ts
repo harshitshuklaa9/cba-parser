@@ -1,26 +1,3 @@
-// Polyfill DOMMatrix for serverless environment
-if (typeof globalThis.DOMMatrix === 'undefined') {
-  (globalThis as any).DOMMatrix = class DOMMatrix {
-    constructor() {}
-    static fromMatrix() { return new (globalThis as any).DOMMatrix(); }
-  };
-}
-if (typeof globalThis.DOMRect === 'undefined') {
-  (globalThis as any).DOMRect = class DOMRect {
-    constructor() {}
-  };
-}
-if (typeof globalThis.DOMPoint === 'undefined') {
-  (globalThis as any).DOMPoint = class DOMPoint {
-    constructor() {}
-  };
-}
-if (typeof globalThis.Path2D === 'undefined') {
-  (globalThis as any).Path2D = class Path2D {
-    constructor() {}
-  };
-}
-
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { EXTRACTION_PROMPT, FLAGS_PROMPT, SUMMARY_PROMPT } from '@/lib/prompts';
@@ -37,23 +14,12 @@ export async function POST(request: NextRequest) {
 
     if (file) {
       const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      // Use pdfjs-dist for text extraction
-      const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-      (pdfjsLib.GlobalWorkerOptions as any).workerSrc = false;
-      const uint8Array = new Uint8Array(buffer);
-      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
-      const pdf = await loadingTask.promise;
-      const textParts: string[] = [];
-      for (let i = 1; i <= Math.min(pdf.numPages, 30); i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items
-          .map((item: any) => ('str' in item ? item.str : ''))
-          .join(' ');
-        textParts.push(pageText);
-      }
-      text = textParts.join('\n');
+      const { extractText } = await import('unpdf');
+      const { text: extractedText } = await extractText(
+        new Uint8Array(arrayBuffer),
+        { mergePages: true }
+      );
+      text = extractedText;
     } else if (pastedText) {
       text = pastedText;
     } else {
