@@ -66,43 +66,31 @@ ${text}
 
 export const FLAGS_PROMPT = (text: string, classifications: any[]) => `
 You are auditing a union CBA extraction for a payroll system.
+Review the extracted data and source text. Flag only REAL issues.
 
-Review this extracted data and the source text. Identify issues
-that a payroll administrator would need to know before entering
-these rates into a payroll system.
+Return ONLY a JSON array. Raw JSON, no markdown.
 
-Return ONLY a JSON array of flag objects. Raw JSON, no markdown.
+Rules:
+- Only flag INCONSISTENCY if base + all fringes does NOT match stated totalPackage AND the delta is more than $0.10
+- Do NOT flag if totals match
+- Do NOT double-count any fringe field
+- Flag MISSING_FIELD only if health, pension, or overtime are completely absent
+- Flag MULTI_YEAR if rate changes exist mid-agreement
+- Flag AMBIGUITY only for genuinely unclear provisions
 
 Schema:
-[
-  {
-    "type": "ambiguity" | "inconsistency" | "missing_field" | "multi_year",
-    "severity": "high" | "medium" | "low",
-    "message": string,
-    "affectedClassification": string | null
-  }
-]
+[{
+  "type": "ambiguity"|"inconsistency"|"missing_field"|"multi_year",
+  "severity": "high"|"medium"|"low",
+  "message": string,
+  "affectedClassification": string | null
+}]
 
-IMPORTANT: Only flag INCONSISTENCY as high severity if the calculated total does NOT match the stated total. If the totals match, do NOT create a flag at all. Only flag mismatches.
-
-When validating total packages, compare base rate + fringes against 'Total Cost Per Hour', not against 'Total Rate For Benefits'. If the document shows both fields, only flag a mismatch if base + fringes does not match 'Total Cost Per Hour'.
-
-IMPORTANT: When validating total package math, sum ONLY the fields shown in the fringes object: health + pension + annuity + vacation + training + sum of other[].rate. Do NOT add any field twice. Do NOT treat deductions or H&S as both a fringe component AND a separate add-on. If base + fringes already equals the stated total, do NOT flag it as a mismatch.
-
-Flag these specific things:
-1. INCONSISTENCY: If base + fringes do not match a stated
-    total package in the source text, flag it with the delta
-2. AMBIGUITY: Any provision that could be interpreted two ways
-3. MISSING_FIELD: Required payroll fields that are absent
-    (especially health, pension, or overtime rules)
-4. MULTI_YEAR: If rates change mid-agreement, confirm the
-    split was captured correctly
-
-Extracted classifications:
+Extracted data:
 ${JSON.stringify(classifications, null, 2)}
 
-Source text excerpt (first 4000 chars):
-${text.slice(0, 4000)}
+Source text (first 3000 chars):
+${text.slice(0, 3000)}
 `;
 
 export const SUMMARY_PROMPT = (agreement: any) => `
