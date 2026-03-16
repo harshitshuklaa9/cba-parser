@@ -15,9 +15,21 @@ export async function POST(request: NextRequest) {
     if (file) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const pdfParse = require('pdf-parse');
-      const pdfData = await pdfParse(buffer);
-      text = pdfData.text;
+      // Use pdfjs-dist for text extraction
+      const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+      const loadingTask = pdfjsLib.getDocument({ data: buffer });
+      const pdf = await loadingTask.promise;
+      const textParts: string[] = [];
+      for (let i = 1; i <= Math.min(pdf.numPages, 30); i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items
+          .map((item: any) => ('str' in item ? item.str : ''))
+          .join(' ');
+        textParts.push(pageText);
+      }
+      text = textParts.join('\n');
     } else if (pastedText) {
       text = pastedText;
     } else {
