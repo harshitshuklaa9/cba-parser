@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
       // Use pdfjs-dist for text extraction
       const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
       pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-      const loadingTask = pdfjsLib.getDocument({ data: buffer });
+      const uint8Array = new Uint8Array(buffer);
+      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
       const pdf = await loadingTask.promise;
       const textParts: string[] = [];
       for (let i = 1; i <= Math.min(pdf.numPages, 30); i++) {
