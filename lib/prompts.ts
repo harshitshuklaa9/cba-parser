@@ -51,6 +51,17 @@ Rules:
 - specialProvisions: capture shift differentials, hazard pay,
    tool allowances, travel pay as short plain-English strings
 
+CRITICAL FIELD MAPPING RULES:
+- If the document contains both 'Total Rate For Benefits'
+  and 'Total Cost Per Hour', use 'Total Cost Per Hour' as
+  the totalPackage value. Never use 'Total Rate For Benefits'
+  as totalPackage.
+- 'Total Rate For Benefits' = fringe contributions only,
+  not the all-in total
+- 'Total Cost Per Hour' = true all-in total compensation,
+  use this for totalPackage
+- If only one total is present, use that as totalPackage
+
 CBA TEXT:
 ${text.slice(0, 12000)}
 `;
@@ -75,6 +86,8 @@ Schema:
 ]
 
 IMPORTANT: Only flag INCONSISTENCY as high severity if the calculated total does NOT match the stated total. If the totals match, do NOT create a flag at all. Only flag mismatches.
+
+When validating total packages, compare base rate + fringes against 'Total Cost Per Hour', not against 'Total Rate For Benefits'. If the document shows both fields, only flag a mismatch if base + fringes does not match 'Total Cost Per Hour'.
 
 Flag these specific things:
 1. INCONSISTENCY: If base + fringes do not match a stated
