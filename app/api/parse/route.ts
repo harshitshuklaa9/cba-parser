@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       const buffer = Buffer.from(arrayBuffer);
       // Use pdfjs-dist for text extraction
       const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = false;
+      (pdfjsLib.GlobalWorkerOptions as any).workerSrc = false;
       const uint8Array = new Uint8Array(buffer);
       const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
       const pdf = await loadingTask.promise;
