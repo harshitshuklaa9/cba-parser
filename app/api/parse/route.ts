@@ -1,3 +1,26 @@
+// Polyfill DOMMatrix for serverless environment
+if (typeof globalThis.DOMMatrix === 'undefined') {
+  (globalThis as any).DOMMatrix = class DOMMatrix {
+    constructor() {}
+    static fromMatrix() { return new (globalThis as any).DOMMatrix(); }
+  };
+}
+if (typeof globalThis.DOMRect === 'undefined') {
+  (globalThis as any).DOMRect = class DOMRect {
+    constructor() {}
+  };
+}
+if (typeof globalThis.DOMPoint === 'undefined') {
+  (globalThis as any).DOMPoint = class DOMPoint {
+    constructor() {}
+  };
+}
+if (typeof globalThis.Path2D === 'undefined') {
+  (globalThis as any).Path2D = class Path2D {
+    constructor() {}
+  };
+}
+
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { EXTRACTION_PROMPT, FLAGS_PROMPT, SUMMARY_PROMPT } from '@/lib/prompts';
