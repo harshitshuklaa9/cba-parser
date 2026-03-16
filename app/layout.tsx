@@ -7,12 +7,6 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "CBA Parser — Union Rate Extraction",
   description: "Automated union contract extraction for construction payroll teams",
-  icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
-    ],
-  },
 };
 
 export default function RootLayout({
