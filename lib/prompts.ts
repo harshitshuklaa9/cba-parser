@@ -74,6 +74,8 @@ Schema:
   }
 ]
 
+IMPORTANT: Only flag INCONSISTENCY as high severity if the calculated total does NOT match the stated total. If the totals match, do NOT create a flag at all. Only flag mismatches.
+
 Flag these specific things:
 1. INCONSISTENCY: If base + fringes do not match a stated
     total package in the source text, flag it with the delta
