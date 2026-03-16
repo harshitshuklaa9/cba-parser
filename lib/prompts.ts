@@ -47,13 +47,14 @@ Return ONLY valid JSON, no markdown, no explanation:
 EXTRACTION RULES:
 - classification: use the SHORT code or name only. If the source uses codes like (a), (b), Class A, Journeyman, Laborer, Foreman — use those short labels. Never copy full jurisdiction paragraphs or work scope descriptions as the classification name. Maximum 50 characters for classification name.
 - baseRate: hourly wage rate explicitly stated
-- fringes.health: welfare or health fund if explicitly stated
+- fringes.health: welfare OR health fund contribution. If source says 'Welfare Fund' map it to health field.
 - fringes.pension: pension fund if explicitly stated
 - fringes.annuity: annuity fund if explicitly stated
 - fringes.vacation: vacation fund if explicitly stated, else 0
 - fringes.training: training fund if explicitly stated, else 0
 - fringes.other: additional named funds with exact names and rates
 - totalPackage: use explicitly stated TOTAL or Total Cost Per Hour, not calculated
+- effectiveDate: extract the date the rates become effective, not the agreement signing date. Look for dates like 'Effective July 1, 2022' near the wage table.
 - For multi-year agreements create separate entries per effective date
 - For multi-zone agreements create separate entries per zone
 - Do not collapse zones or periods into one row
@@ -85,6 +86,8 @@ Schema:
 IMPORTANT: Only flag INCONSISTENCY as high severity if the calculated total does NOT match the stated total. If the totals match, do NOT create a flag at all. Only flag mismatches.
 
 When validating total packages, compare base rate + fringes against 'Total Cost Per Hour', not against 'Total Rate For Benefits'. If the document shows both fields, only flag a mismatch if base + fringes does not match 'Total Cost Per Hour'.
+
+IMPORTANT: When validating total package math, sum ONLY the fields shown in the fringes object: health + pension + annuity + vacation + training + sum of other[].rate. Do NOT add any field twice. Do NOT treat deductions or H&S as both a fringe component AND a separate add-on. If base + fringes already equals the stated total, do NOT flag it as a mismatch.
 
 Flag these specific things:
 1. INCONSISTENCY: If base + fringes do not match a stated
