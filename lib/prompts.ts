@@ -1,13 +1,19 @@
 export const EXTRACTION_PROMPT = (text: string) => `
-You are a construction payroll specialist. You are reading a
-union collective bargaining agreement and must extract all
-wage and fringe benefit data with precision.
+You are a construction payroll specialist extracting data
+from a union collective bargaining agreement or wage schedule.
 
-Extract the following from this CBA text and return ONLY valid
-JSON matching the schema below. No explanation, no markdown,
-no preamble. Raw JSON only.
+CRITICAL RULES:
+1. Only extract values that are EXPLICITLY stated in the source text.
+2. Never invent, estimate, infer, or hallucinate numbers.
+3. If a fringe category is not explicitly present, use 0.
+4. If a core field cannot be read reliably, leave it null or omit that classification instead of guessing.
+5. Read dollar amounts exactly as written in wage tables.
+6. Preserve exact field names from the source document.
+7. If table structure appears degraded or ambiguous, prioritize precision over completeness — return fewer rows rather than guessed rows.
+8. Do NOT convert benefits totals into total compensation unless the source explicitly states the total compensation figure.
+9. If source contains both "Total Rate For Benefits" and "Total Cost Per Hour", use "Total Cost Per Hour" as totalPackage.
 
-Schema:
+Return ONLY valid JSON, no markdown, no explanation:
 {
   "unionName": string,
   "localNumber": string,
@@ -38,32 +44,22 @@ Schema:
   ]
 }
 
-Rules:
-- All rates are per hour in USD as decimal numbers
-- If a rate is not explicitly stated, use 0, never guess
-- If multiple effective dates exist (multi-year schedule),
-   create a SEPARATE classification entry for each date period
-  with the same classification name but different effectiveDate
-- For totalPackage, sum base + all fringe components
-- For trade, infer from context: Electrical, Carpentry,
-   Plumbing, Ironwork, Drywall, Laborer, Operating Engineer,
-   Teamster, Mason, Painter, or Other
-- specialProvisions: capture shift differentials, hazard pay,
-   tool allowances, travel pay as short plain-English strings
+EXTRACTION RULES:
+- baseRate: hourly wage rate explicitly stated
+- fringes.health: welfare or health fund if explicitly stated
+- fringes.pension: pension fund if explicitly stated
+- fringes.annuity: annuity fund if explicitly stated
+- fringes.vacation: vacation fund if explicitly stated, else 0
+- fringes.training: training fund if explicitly stated, else 0
+- fringes.other: additional named funds with exact names and rates
+- totalPackage: use explicitly stated TOTAL or Total Cost Per Hour, not calculated
+- For multi-year agreements create separate entries per effective date
+- For multi-zone agreements create separate entries per zone
+- Do not collapse zones or periods into one row
+- Do not invent categories not shown in source
 
-CRITICAL FIELD MAPPING RULES:
-- If the document contains both 'Total Rate For Benefits'
-  and 'Total Cost Per Hour', use 'Total Cost Per Hour' as
-  the totalPackage value. Never use 'Total Rate For Benefits'
-  as totalPackage.
-- 'Total Rate For Benefits' = fringe contributions only,
-  not the all-in total
-- 'Total Cost Per Hour' = true all-in total compensation,
-  use this for totalPackage
-- If only one total is present, use that as totalPackage
-
-CBA TEXT:
-${text.slice(0, 12000)}
+SOURCE TEXT:
+${text}
 `;
 
 export const FLAGS_PROMPT = (text: string, classifications: any[]) => `
