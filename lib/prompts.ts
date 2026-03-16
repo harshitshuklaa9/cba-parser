@@ -45,6 +45,7 @@ Return ONLY valid JSON, no markdown, no explanation:
 }
 
 EXTRACTION RULES:
+- classification: use the SHORT code or name only. If the source uses codes like (a), (b), Class A, Journeyman, Laborer, Foreman — use those short labels. Never copy full jurisdiction paragraphs or work scope descriptions as the classification name. Maximum 50 characters for classification name.
 - baseRate: hourly wage rate explicitly stated
 - fringes.health: welfare or health fund if explicitly stated
 - fringes.pension: pension fund if explicitly stated
